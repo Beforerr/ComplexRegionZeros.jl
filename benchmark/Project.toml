@@ -1,0 +1,15 @@
+[deps]
+BaryRational = "91aaffc3-5777-4842-85b7-5d3d5d6a3494"
+Chairmarks = "0ca39b1e-fe0b-4e98-acfc-b1656634c4de"
+ComplexRegionZeros = "a18a5e3b-a850-4ee6-92df-5905c5210e66"
+RationalFunctionApproximation = "c92886a3-cb30-4e18-b84f-372dde475ecc"
+
+# registered BaryRational (1.1.1) caps GenericLinearAlgebra at 0.3, which fails to precompile
+# beside RationalFunctionApproximation on Julia 1.14; main allows 0.4
+[sources]
+BaryRational = {rev = "main", url = "https://github.com/macd/BaryRational.jl"}
+
+[compat]
+BaryRational = "1"
+Chairmarks = "1"
+RationalFunctionApproximation = "0.4"

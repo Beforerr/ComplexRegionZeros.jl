@@ -1,0 +1,14 @@
+name = "ComplexRegionZeros"
+uuid = "a18a5e3b-a850-4ee6-92df-5905c5210e66"
+version = "0.1.0"
+authors = ["Zijin Zhang <zijin@ucla.edu>"]
+
+[workspace]
+projects = ["test", "benchmark"]
+
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+
+[compat]
+LinearAlgebra = "1"
+julia = "1.10"
