@@ -7,11 +7,12 @@ using Test
     f(x) = 3 + sum(c / (x - p) for (c, p) in zip((1, 2im, -0.5, 1.0e-3), ps))
     # 51 samples: an odd count; 400: the fit must stop far short of its sample budget
     for z in (complex.(range(-1, 1; length = 51)), [complex(x, y) for x in range(-1, 1; length = 20) for y in range(-0.2, 0.2; length = 20)])
-        r = aaa(f.(z), z)
-        @test r.converged
-        @test length(r.nodes) == length(ps) + 1
-        @test r.values == f.(r.nodes)
-        found = poles(r.nodes, r.weights)
+        (; fit, converged) = aaa(f.(z), z)
+        @test converged
+        @test length(fit.nodes) == length(ps) + 1
+        @test fit.(fit.nodes) == f.(fit.nodes)
+        @test fit(0.3 + 0.05im) ≈ f(0.3 + 0.05im) rtol = 1.0e-10
+        found = poles(fit)
         @test all(p -> minimum(abs, found .- p) < 1.0e-9, ps)
     end
 end

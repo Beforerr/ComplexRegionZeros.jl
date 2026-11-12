@@ -26,16 +26,36 @@ function findzeros(f, z::AbstractArray, alg::AAA)
         end
         Z, F = z, y
     end
-    (; nodes, weights, converged) = aaa(F, Z; alg.tol, alg.max_degree, alg.stagnation)
-    return (; roots = poles(nodes, weights), nevals, converged)
+    (; fit, converged) = aaa(F, Z; alg.tol, alg.max_degree, alg.stagnation)
+    return (; roots = poles(fit), nevals, converged)
+end
+
+struct Barycentric{Z <: AbstractVector, V <: AbstractVector, W <: AbstractVector}
+    nodes::Z
+    values::V
+    weights::W
+end
+
+function (r::Barycentric)(x)
+    (; nodes, values, weights) = r
+    T = promote_type(typeof(x), eltype(nodes), eltype(values), eltype(weights))
+    num = den = zero(T)
+    for k in eachindex(nodes, values, weights)
+        δ = x - nodes[k]
+        iszero(δ) && return T(values[k])
+        c = weights[k] / δ
+        num += c * values[k]
+        den += c
+    end
+    return num / den
 end
 
 # Poles of a barycentric rational = finite eigenvalues of the arrowhead pencil (Klein 2012);
 # the infinite ones are the pencil's own, not the fit's. Zero weights leave the pencil singular,
 # so drop those nodes first.
-function poles(nodes, weights)
-    keep = map(!iszero, weights)
-    z, w = nodes[keep], weights[keep]
+function poles(r::Barycentric)
+    keep = map(!iszero, r.weights)
+    z, w = r.nodes[keep], r.weights[keep]
     m = length(w)
     T = real(eltype(z))
     B = diagm([zero(T); ones(T, m)])
@@ -49,7 +69,7 @@ end
 function aaa(y, z; tol = 1.0e-13, max_degree = 150, stagnation = 5)
     m = length(z)
     T = promote_type(eltype(z), eltype(y))
-    m == 0 && return (; nodes = z[1:0], values = y[1:0], weights = T[], converged = false)
+    m == 0 && return (; fit = Barycentric(z[1:0], y[1:0], T[]), converged = false)
     fmax = maximum(abs, y)
     # A node's own Loewner row is dropped, so the fit can never outrank the surviving samples.
     N = min(max_degree + 1, m >> 1)
@@ -92,12 +112,12 @@ function aaa(y, z; tol = 1.0e-13, max_degree = 150, stagnation = 5)
         # s > 0, unconverged: fall back on the best fit
         if s != 0
             b = s < 0 ? n : s
-            return (; nodes = z[σ[1:b]], values = y[σ[1:b]], weights = ws[b], converged = s < 0)
+            return (; fit = Barycentric(z[σ[1:b]], y[σ[1:b]], ws[b]), converged = s < 0)
         end
         push!(σ, k); test[k] = false
     end
     # A single sample: nothing to fit.
-    return (; nodes = z[σ], values = y[σ], weights = ones(T, length(σ)), converged = false)
+    return (; fit = Barycentric(z[σ], y[σ], ones(T, length(σ))), converged = false)
 end
 
 # Thin QR `A = Q[:, 1:n]·R[1:n, 1:n]`, updated in place as `A` gains a column or has a row

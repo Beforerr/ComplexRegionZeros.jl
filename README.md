@@ -15,18 +15,28 @@ and residual. Each can be refined by a local method such as Muller or Newton.
 
 ## API
 
-Exported: `findzeros`, `AAA`. Public but not exported: `aaa`, `poles`.
+Exported: `findzeros`, `AAA`. Public but not exported: `aaa`, `Barycentric`, `poles`.
 
-- `findzeros(f, z, alg) -> (; roots, nevals, converged)`: zeros of `f` from its values at the points of the array `z`. `converged` is `false` when the fit stopped short of `tol` and may be missing
-  zeros, including when no sample is usable.
+- `findzeros(f, domain, alg) -> (; roots, nevals, converged)`: zeros of `f` over `domain`, in
+  the form `alg` consumes; `AAA` takes an array of sample points. `converged` is `false` when
+  the fit stopped short of `tol` and may be missing zeros, including when no sample is usable.
 - `AAA(; tol = 1e-13, max_degree = 150, stagnation = 5)`: fits `1/f` by AAA and returns the
   fit's poles. Non-finite and zero values are dropped, so `f` can return `NaN` where its
   value cannot be trusted; fitting such values would spend the fit's degree on their error.
-- `aaa(y, z; tol, max_degree, stagnation) -> (; nodes, values, weights, converged)`: discrete
-  AAA fit of values `y` at points `z`, a barycentric rational. It stops on the same rule as
-  RationalFunctionApproximation's `approximate(y, z, Barycentric())`, falling back on the best
-  fit when the error stagnates or `max_degree` is hit.
-- `poles(nodes, weights)`: finite poles of the barycentric rational.
+- `aaa(y, z; tol, max_degree, stagnation) -> (; fit, converged)`: discrete AAA fit of values
+  `y` at points `z`. It stops on the same rule as RationalFunctionApproximation's
+  `approximate(y, z, Barycentric())`, falling back on the best fit when the error stagnates
+  or `max_degree` is hit.
+- `Barycentric(nodes, values, weights)`: barycentric rational, callable as `r(z)`.
+- `poles(r::Barycentric)`: its finite poles.
+
+### Extending
+
+A new algorithm is a type plus a `findzeros(f, domain, ::Alg)` method; its `domain` may be
+a geometric region instead of points, and its result may carry extra fields. Problems over a
+parameter (e.g. a wavevector sweep) wrap `findzeros(z -> f(z, p), domain, alg)` per `p` and
+link the roots into branches downstream, as VlasovMaxwellDispersion does; a fit over `(z, p)`
+jointly would be its own `findzeros` method that reuses `poles` on each `p`-slice.
 
 The fit and its cost are derived in [docs/aaa.md](docs/aaa.md). `benchmark/compare.jl`
 compares fits against RationalFunctionApproximation.jl and BaryRational.jl.

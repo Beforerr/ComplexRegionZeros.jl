@@ -5,13 +5,12 @@ using ComplexRegionZeros: aaa, poles
 import RationalFunctionApproximation as RFA, BaryRational as BR
 disable_logging(Logging.Info)
 
-bary(r) = z -> (c = r.weights ./ (z .- r.nodes); sum(c .* r.values) / sum(c))
 relerr(g, f, T) = maximum(abs(g(z) - f(z)) for z in T) / maximum(abs ∘ f, T)
 poleerr(found, exact) = isempty(exact) ? NaN : maximum(p -> minimum(abs, found .- p), exact)
 
 const tol = 1.0e-13
 fitters = [
-    "ours" => (y, z) -> (r = aaa(y, z; tol); (length(r.nodes) - 1, bary(r), () -> poles(r.nodes, r.weights))),
+    "ours" => (y, z) -> (r = aaa(y, z; tol).fit; (length(r.nodes) - 1, r, () -> poles(r))),
     "RFA Barycentric" => (y, z) -> (a = RFA.approximate(y, z, RFA.Barycentric(); tol, max_degree = 150, max_iter = 151).fun; (RFA.degree(a), a, () -> RFA.poles(a))),
     "RFA Thiele" => (y, z) -> (a = RFA.approximate(y, z, RFA.Thiele(); tol, max_iter = 151).fun; (RFA.degree(a), a, () -> RFA.poles(a))),
     "BaryRational" => (y, z) -> (a = BR.aaa(z, y; tol, mmax = 151, clean = 0); (length(a.x) - 1, a, () -> BR.prz(a)[1])),
