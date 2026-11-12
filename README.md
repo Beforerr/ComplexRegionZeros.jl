@@ -46,5 +46,19 @@ a geometric region instead of points, and its result may carry extra fields. One
 work across parameters (a joint fit over `(z, p)`, warm starts) also specializes
 `findzeros(f, domain, ps, ::Alg)`. Linking per-`p` roots into branches is left to callers.
 
+## Related packages
+
+- [RootsAndPoles.jl](https://github.com/fgasdia/RootsAndPoles.jl) (GRPF): argument principle
+  on an adaptively refined Delaunay mesh of a rectangle; finds poles too. Here the caller
+  chooses the points (any set: filtered, boundary-only), `f` may be `NaN` where untrusted, and
+  smooth meromorphic `f` needs no mesh refinement.
+- [cxroots](https://github.com/rparini/cxroots) (Python): contour integrals over a circle or
+  rectangle, using `f′` or finite differences; gives multiplicities, but `f` must be analytic
+  inside and nonzero on the contour. Here `f` needs no derivative and may have poles.
+- [RationalFunctionApproximation.jl](https://github.com/complexvariables/RationalFunctionApproximation.jl),
+  [BaryRational.jl](https://github.com/macd/BaryRational.jl): general AAA fitting. `aaa`
+  stops on RationalFunctionApproximation's rule but updates a QR instead of taking an SVD each
+  step.
+
 The fit and its cost are derived in [docs/aaa.md](docs/aaa.md). `benchmark/compare.jl`
 compares fits against RationalFunctionApproximation.jl and BaryRational.jl.
