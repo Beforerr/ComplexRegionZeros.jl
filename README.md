@@ -20,6 +20,10 @@ Exported: `findzeros`, `AAA`. Public but not exported: `aaa`, `Barycentric`, `po
 - `findzeros(f, domain, alg) -> (; roots, nevals, converged)`: zeros of `f` over `domain`, in
   the form `alg` consumes; `AAA` takes an array of sample points. `converged` is `false` when
   the fit stopped short of `tol` and may be missing zeros, including when no sample is usable.
+- `findzeros(f, domain, ps, alg)`: zeros of `f(p)` for each `p` in `ps`, as an array of the
+  results above shaped like `ps`. `f(p)` returns the function of `z`, so setup that depends
+  only on `p` runs once per `p` while `p` stays a plain coordinate. By default each `p` is
+  solved alone.
 - `AAA(; tol = 1e-13, max_degree = 150, stagnation = 5)`: fits `1/f` by AAA and returns the
   fit's poles. Non-finite and zero values are dropped, so `f` can return `NaN` where its
   value cannot be trusted; fitting such values would spend the fit's degree on their error.
@@ -38,10 +42,9 @@ Exported: `findzeros`, `AAA`. Public but not exported: `aaa`, `Barycentric`, `po
 ### Extending
 
 A new algorithm is a type plus a `findzeros(f, domain, ::Alg)` method; its `domain` may be
-a geometric region instead of points, and its result may carry extra fields. Problems over a
-parameter (e.g. a wavevector sweep) wrap `findzeros(z -> f(z, p), domain, alg)` per `p` and
-link the roots into branches downstream, as VlasovMaxwellDispersion does; a fit over `(z, p)`
-jointly would be its own `findzeros` method that reuses `poles` on each `p`-slice.
+a geometric region instead of points, and its result may carry extra fields. One that shares
+work across parameters (a joint fit over `(z, p)`, warm starts) also specializes
+`findzeros(f, domain, ps, ::Alg)`. Linking per-`p` roots into branches is left to callers.
 
 The fit and its cost are derived in [docs/aaa.md](docs/aaa.md). `benchmark/compare.jl`
 compares fits against RationalFunctionApproximation.jl and BaryRational.jl.

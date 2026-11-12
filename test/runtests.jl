@@ -39,6 +39,13 @@ end
     end
 end
 
+@testset "findzeros over a parameter" begin
+    f(p) = z -> (z - p) * (z + 1) / (z - 2)
+    ps = [0.2, 0.5im, -0.3 + 0.4im]
+    rs = findzeros(f, range(-1.5, 1.5, 20) .+ im .* range(-1, 1, 16)', ps, AAA())
+    @test all(((r, p),) -> r.converged && minimum(abs, r.roots .- p) < 1.0e-8, zip(rs, ps))
+end
+
 @testset "muller" begin
     f(z) = (z - (1 + 2im)) * (z + 3) * exp(z)
     (; root, nevals, converged) = muller(f, 0.8 + 1.7im)
