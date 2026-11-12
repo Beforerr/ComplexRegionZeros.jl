@@ -15,7 +15,7 @@ and residual. Each can be refined by a local method such as Muller or Newton.
 
 ## API
 
-Exported: `findzeros`, `AAA`. Public but not exported: `aaa`, `Barycentric`, `poles`.
+Exported: `findzeros`, `AAA`. Public but not exported: `aaa`, `Barycentric`, `poles`, `muller`.
 
 - `findzeros(f, domain, alg) -> (; roots, nevals, converged)`: zeros of `f` over `domain`, in
   the form `alg` consumes; `AAA` takes an array of sample points. `converged` is `false` when
@@ -29,6 +29,11 @@ Exported: `findzeros`, `AAA`. Public but not exported: `aaa`, `Barycentric`, `po
   or `max_degree` is hit.
 - `Barycentric(nodes, values, weights)`: barycentric rational, callable as `r(z)`.
 - `poles(r::Barycentric)`: its finite poles.
+- `muller(f, x0; atol = 1e-10, maxiter = 100)`, `muller(f, x0, x1, x2; …) -> (; root, nevals, converged)`:
+  Muller's method from a guess or three starting points; `root` is `NaN` unless converged. A
+  step below `atol·max(|x|, 1)` converges only once `|f|` has fallen by `√atol`, so exponential
+  decay or a collapsed step is not taken for a root; steps to non-finite or overflowing `f` are
+  halved back.
 
 ### Extending
 

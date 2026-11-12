@@ -1,5 +1,5 @@
 using ComplexRegionZeros
-using ComplexRegionZeros: aaa, poles
+using ComplexRegionZeros: aaa, poles, muller
 using Test
 
 @testset "aaa recovers a rational's poles at its exact degree" begin
@@ -36,5 +36,30 @@ end
     for Z in (filter(z -> abs(z) < 1.5, range(-1.5, 1.5, 30) .+ im .* range(-1.5, 1.5, 30)'), 1.5 .* cispi.(2 .* (0:99) ./ 100))
         r = findzeros(f, Z, AAA())
         @test all(z -> minimum(abs, r.roots .- z) < 1.0e-8, zs)
+    end
+end
+
+@testset "muller" begin
+    f(z) = (z - (1 + 2im)) * (z + 3) * exp(z)
+    (; root, nevals, converged) = muller(f, 0.8 + 1.7im)
+    @test converged && root ≈ 1 + 2im && nevals < 20
+
+    # Non-finite f fails; a trial step into overflow contracts back toward the finite iterates
+    @test isnan(muller(x -> ComplexF64(Inf, Inf), 1.0, 1.1, 1.2).root)
+    @test isnan(muller(x -> ComplexF64(NaN, NaN), 1.0, 1.1, 1.2).root)
+    hits = Ref(0)
+    fovf(x) = (v = exp(10x) - 1; isfinite(v) || (hits[] += 1); v)
+    @test abs(muller(fovf, -2.0, -1.9, -1.8).root) < 1.0e-10 && hits[] > 0
+
+    # Zero-free, with decades of |f| across any seed triple: a collapsed step is no root.
+    slope(x) = exp(1.0e7 * x^2)
+    @test !any(muller(slope, 0.002 * cis(θ)).converged for θ in 0:0.2:6.2)
+
+    # A root resolved only to the function's own noise, above `atol`, still converges.
+    r0 = 0.3 - 0.1im
+    noisy(x) = (x - r0) * (1 + x) + 1.0e-9 * cis(1.0e15 * real(x))
+    for seed in (r0, r0 + 0.01)
+        r = muller(noisy, seed)
+        @test r.converged && abs(r.root - r0) < 1.0e-8
     end
 end
